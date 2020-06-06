@@ -7,8 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pigpio.h>
+#include <unistd.h>
 
-#define SERVOPIN 17 //BPin 12 PWM0
+#define SERVOPIN 0 //BCM - PWM0
 #define SERVOFREQ 50 //Hz
 
 #define THERMOCHAN0 0 //Channel for THERMO0
@@ -16,6 +17,8 @@
 #define THERMOWORDS 2 //Words to read
 #define THERMOBAUD 50000 //THERMO SPI BAUD
 #define THERMOFLAGS 0 //Set all flags to 0 for default
+
+#define DAMPERPERIOD 1 //Damper period in seconds
 
 /*
  * Sets the open percentage of the damper. 
@@ -30,7 +33,7 @@ int set_damper_open(int percent)
     printf("WARNING: Damper percent should be between 0 and 100.\n");
     return -1;
   } else {
-    servo_pos = percent * 10 + 1000;
+    servo_pos = 2300 - (percent * 9);
   }
 
   printf("Setting damper to %d%%.\n", percent);
@@ -43,7 +46,7 @@ int set_damper_open(int percent)
 
 /*
  * Get the temp given an spi_handle
- * handle - an integer for the spi_handle
+ * handle - spi_handle value
  */
 float get_temp(int spiHandle)
 {
@@ -57,6 +60,8 @@ float get_temp(int spiHandle)
 
 int main(int argc, char *argv[]){
 
+  float set_temp = 0;
+
   if (gpioInitialise() < 0){
     printf("ERROR: Failed to initialize GPIOs.\n");
     return -1;
@@ -64,17 +69,50 @@ int main(int argc, char *argv[]){
     printf("SUCCESS: Initialized GPIOs.\n");
   }
 
+  if (argc != 2){
+    printf("ERROR: Set temperature required.\n");
+    return -1;
+  } else {
+    set_temp = atof(argv[1]);
+    printf("Set temp to %f fahrenheit.\n");
+  }
+
   if (gpioGetMode(SERVOPIN) != PI_OUTPUT){
     gpioSetMode(SERVOPIN, PI_OUTPUT);
   }
 
-  int spiHandle = spiOpen(THERMOCHAN0,
+  int spiHandle0 = spiOpen(THERMOCHAN0,
 			  THERMOBAUD,
 			  THERMOFLAGS);
+
+  int spiHandle1 = spiOpen(THERMOCHAN1,
+			  THERMOBAUD,
+			  THERMOFLAGS);
+
+  int damper = 0;
+  float temp0 = 0.0;
+  float temp1 = 0.0;
   
-  printf("temp = %f\n", get_temp(spiHandle));
+  while (1==1){
+    temp0 = get_temp(spiHandle0);
+    temp1 = get_temp(spiHandle1);
+    printf("temp0 = %f\n", temp0);
+    printf("temp1 = %f\n", temp1);
+    if (temp0 < set_temp){
+      if (damper < 100){
+	damper++;
+      }
+    } else if (temp0 > set_temp){
+      if (damper > 0){
+	damper--;
+      }
+    }
+    set_damper_open(damper);
+    sleep(DAMPERPERIOD);
+  }
     
-  spiClose(spiHandle);
+  spiClose(spiHandle0);
+  spiClose(spiHandle1);
 
   return 0;
 }
