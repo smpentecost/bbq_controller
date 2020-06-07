@@ -11,4 +11,4 @@ This project brings my BBQ/smoker into the 21st century, by automating control o
 7. 1x Custom adapter board - Free since I had parts laying around
 8. 1x 9V 1A Power Supply - $10
 
-Pictures of the adapter board details to come.
+Pictures of the adapter board details to come soon.
