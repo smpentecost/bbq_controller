@@ -1,0 +1,14 @@
+* Automated BBQ Controller
+
+This project brings my BBQ/smoker into the 21st century, by automating control of its airflow damper based on the smoker's current temperature. My parts list:
+
+1. 1x Raspberry Pi Zero W - $10
+2. 1x SD card loaded with Raspbian Lite - $5
+3. 2x SainSmart MAX6675 Module + K Type Thermocouple Thermocouple Sensor Temperature 0~1024℃ - $14ea
+4. 1x Futaba S3003 Servo - $18
+5. 1x 5-in HVAC Damper Duct Manual Volume Damper with Sleeve - $15
+6. 1x MCIGICM IC 7805 Voltage Regulator, L7805 Linear Positive Fixed 1 Output 5V 1.5A - $0.50ea
+7. 1x Custom adapter board - Free since I had parts laying around
+8. 1x 9V 1A Power Supply - $10
+
+Pictures of the adapter board details to come.
