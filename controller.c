@@ -10,7 +10,7 @@
 
 #include "controller.h"
 
-int initController()
+int initController(int *handle0, int *handle1)
 {
   if (gpioInitialise() < 0){
     printf("ERROR: Failed to initialize GPIOs.\n");
@@ -23,11 +23,6 @@ int initController()
     gpioSetMode(SERVOPIN, PI_OUTPUT);
   }
 
-  return 0;
-}
-
-void getHandles(int *handle0, int *handle1)
-{
   *handle0 = spiOpen(THERMOCHAN0,
 		     THERMOBAUD,
 		     THERMOFLAGS);
@@ -35,6 +30,8 @@ void getHandles(int *handle0, int *handle1)
   *handle1 = spiOpen(THERMOCHAN1,
 		     THERMOBAUD,
 		     THERMOFLAGS);
+
+  return 0;
 }
 
 void closeHandles(int *handle0, int *handle1)

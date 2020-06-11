@@ -22,8 +22,7 @@ int main(int argc, char *argv[]){
     printf("Set temp to %f fahrenheit.\n", set_temp);
   }
 
-  initController();
-  getHandles(spiHandle0, spiHandle1);
+  initController(spiHandle0, spiHandle1);
   
   while (1==1){
     temp0 = getTemp(spiHandle0);

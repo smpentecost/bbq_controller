@@ -9,12 +9,10 @@
 
 #define DAMPERPERIOD 1 //Damper period in seconds
 
-int initController();
+int initController(int *handle0, int *handle1);
 
 int setDamperOpen(int percent);
 
 float getTemp(int *spiHandle);
-
-void getHandles(int *handle0, int *handle1);
 
 void closeHandles(int *handle0, int *handle1);
