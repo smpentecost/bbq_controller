@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include "controller.h"
+#include "psql.h"
 
 int main(int argc, char *argv[]){
 
@@ -15,20 +16,26 @@ int main(int argc, char *argv[]){
   int *spiHandle1 = malloc(4);
 
   if (argc != 2){
-    printf("ERROR: Set temperature required.\n");
+    fprintf(stderr, "Set temperature required.\n");
     return -1;
   } else {
     set_temp = atof(argv[1]);
-    printf("Set temp to %f fahrenheit.\n", set_temp);
+    fprintf(stdout, "Set temp to %f fahrenheit.\n", set_temp);
   }
 
-  initController(spiHandle0, spiHandle1);
+  if (initController(spiHandle0, spiHandle1) != 0) exit(-1);
+
+  
+  PGconn *conn = initdb();
+
+  exit_nicely(conn);
+  
   
   while (1==1){
     temp0 = getTemp(spiHandle0);
     temp1 = getTemp(spiHandle1);
-    printf("temp0 = %f\n", temp0);
-    printf("temp1 = %f\n", temp1);
+    fprintf(stdout, "temp0 = %f\n", temp0);
+    fprintf(stdout, "temp1 = %f\n", temp1);
     if (temp0 < set_temp){
       if (damper < 100){
   	damper++;
@@ -42,9 +49,9 @@ int main(int argc, char *argv[]){
     sleep(DAMPERPERIOD);
   }
     
-   closeHandles(spiHandle0, spiHandle1);
+  closeHandles(spiHandle0, spiHandle1);
   free(spiHandle0);
   free(spiHandle1);
-  
+
   return 0;
 }

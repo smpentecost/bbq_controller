@@ -13,10 +13,10 @@
 int initController(int *handle0, int *handle1)
 {
   if (gpioInitialise() < 0){
-    printf("ERROR: Failed to initialize GPIOs.\n");
+    fprintf(stderr, "Failed to initialize GPIOs.\n");
     return -1;
   } else {
-    printf("SUCCESS: Initialized GPIOs.\n");
+    fprintf(stdout, "Initialized GPIOs.\n");
   }
 
   if (gpioGetMode(SERVOPIN) != PI_OUTPUT){
@@ -50,15 +50,15 @@ int setDamperOpen(int percent)
   int servo_pos;
   
   if (percent<0 || percent>100){
-    printf("WARNING: Damper percent should be between 0 and 100.\n");
+    fprintf(stderr, "WARNING: Damper percent should be between 0 and 100.\n");
     return -1;
   } else {
     servo_pos = 2300 - (percent * 9);
   }
 
-  printf("Setting damper to %d%%.\n", percent);
+  fprintf(stdout, "Setting damper to %d%%.\n", percent);
   if (gpioServo(SERVOPIN, servo_pos) < 0){
-    printf("ERROR: Issue setting PWM.");
+    fprintf(stderr, "Issue setting PWM.");
     return -1;
   }
   return 0;
