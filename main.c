@@ -28,6 +28,10 @@ int main(int argc, char *argv[]){
   
   PGconn *conn = initdb();
 
+  sendTemperatures(conn, 150.0, 150.0);
+
+  getTemperatures(conn);
+    
   exit_nicely(conn);
   
   

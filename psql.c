@@ -3,6 +3,32 @@
 #include "psql.h"
 
 
+static int beginTransaction(PGconn *conn)
+{
+  PGresult   *res;
+
+  res = PQexec(conn, "BEGIN");
+  if (PQresultStatus(res) != PGRES_COMMAND_OK)
+    {
+      fprintf(stderr, "BEGIN command failed: %s", PQerrorMessage(conn));
+      PQclear(res);
+      exit_nicely(conn);
+      return -1;
+    }
+  PQclear(res);
+
+  return 0;
+}
+
+
+static void endTransaction(PGconn *conn)
+{
+  PGresult   *res;
+
+  res = PQexec(conn, "END");
+  PQclear(res);
+}
+
 void exit_nicely(PGconn *conn)
 {
   PQfinish(conn);
@@ -15,15 +41,7 @@ PGconn *initdb()
   PGconn     *conn;
   PGresult   *res;
 
-
-  /*
-   * If the user supplies a parameter on the command line, use it as the
-   * conninfo string; otherwise default to setting dbname=postgres and using
-   * environment variables or defaults for all other connection parameters.
-   */
   conninfo = "host=server.aio-net.com user=smpentecost dbname=home";
-
-  /* Make a connection to the database */
   conn = PQconnectdb(conninfo);
 
   /* Check to see that the backend connection was successfully made */
@@ -44,78 +62,72 @@ PGconn *initdb()
       exit_nicely(conn);
     }
 
-  /*
-   * Should PQclear PGresult whenever it is no longer needed to avoid memory
-   * leaks
-   */
   PQclear(res);
 
   return conn;
 }
 
-int sendTransaction(PGconn *conn, char s[])
+int sendTemperatures(PGconn *conn, float temp1, float temp2)
 {
-  /*
-   * Our test case here involves using a cursor, for which we must be inside
-   * a transaction block.  We could do the whole thing with a single
-   * PQexec() of "select * from pg_database", but that's too trivial to make
-   * a good example.
-   */
+  PGresult   *res;
+  char sql[160];
+
+  if(!beginTransaction(conn)){
+    sprintf(sql, "INSERT INTO bbq.temperatures (temp1, temp2) VALUES (%f, %f);", temp1, temp2);
+    res = PQexec(conn, sql);
+    PQclear(res);
+  };
+  endTransaction(conn);
+
+  return 0;
+}
+
+int getTemperatures(PGconn * conn)
+{
   PGresult   *res;
   int         nFields;
   int         i, j;
 
-  /* Start a transaction block */
-  res = PQexec(conn, "BEGIN");
-  if (PQresultStatus(res) != PGRES_COMMAND_OK)
-    {
-      fprintf(stderr, "BEGIN command failed: %s", PQerrorMessage(conn));
-      PQclear(res);
-      exit_nicely(conn);
-    }
-  PQclear(res);
+  if (!beginTransaction(conn)){
 
-  /*
-   * Fetch rows from pg_database, the system catalog of databases
-   */
-  res = PQexec(conn, "DECLARE myportal CURSOR FOR select * from home");
-  if (PQresultStatus(res) != PGRES_COMMAND_OK)
-    {
-      fprintf(stderr, "DECLARE CURSOR failed: %s", PQerrorMessage(conn));
-      PQclear(res);
-      exit_nicely(conn);
-    }
-  PQclear(res);
+    res = PQexec(conn, "DECLARE myportal CURSOR FOR select * from bbq.temperatures");
+    if (PQresultStatus(res) != PGRES_COMMAND_OK)
+      {
+	fprintf(stderr, "DECLARE CURSOR failed: %s", PQerrorMessage(conn));
+	PQclear(res);
+	exit_nicely(conn);
+      }
+    PQclear(res);
 
-  res = PQexec(conn, "FETCH ALL in myportal");
-  if (PQresultStatus(res) != PGRES_TUPLES_OK)
-    {
-      fprintf(stderr, "FETCH ALL failed: %s", PQerrorMessage(conn));
-      PQclear(res);
-      exit_nicely(conn);
-    }
+    res = PQexec(conn, "FETCH ALL in myportal");
+    if (PQresultStatus(res) != PGRES_TUPLES_OK)
+      {
+	fprintf(stderr, "FETCH ALL failed: %s", PQerrorMessage(conn));
+	PQclear(res);
+	exit_nicely(conn);
+      }
 
-  /* first, print out the attribute names */
-  nFields = PQnfields(res);
-  for (i = 0; i < nFields; i++)
-    printf("%-15s", PQfname(res, i));
-  printf("\n\n");
+    /* first, print out the attribute names */
+    nFields = PQnfields(res);
+    for (i = 0; i < nFields; i++)
+      printf("%-15s", PQfname(res, i));
+    printf("\n\n");
 
-  /* next, print out the rows */
-  for (i = 0; i < PQntuples(res); i++)
-    {
-      for (j = 0; j < nFields; j++)
-	printf("%-15s", PQgetvalue(res, i, j));
-      printf("\n");
-    }
+    /* next, print out the rows */
+    for (i = 0; i < PQntuples(res); i++)
+      {
+	for (j = 0; j < nFields; j++)
+	  printf("%-15s", PQgetvalue(res, i, j));
+	printf("\n");
+      }
 
-  PQclear(res);
-  
-  /* close the portal ... we don't bother to check for errors ... */
-  res = PQexec(conn, "CLOSE myportal");
-  PQclear(res);
+    PQclear(res);
 
-  /* end the transaction */
-  res = PQexec(conn, "END");
-  PQclear(res);
+    /* close the portal ... we don't bother to check for errors ... */
+    res = PQexec(conn, "CLOSE myportal");
+    PQclear(res);
+  }
+  endTransaction(conn);
+
+  return 0;
 }
