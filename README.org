@@ -1,3 +1,5 @@
+View this project on [CADLAB.io](https://cadlab.io/project/23533). 
+
 * Automated BBQ Controller
 
 This project brings my BBQ/smoker into the 21st century, by automating control of its airflow damper based on the smoker's current temperature. My parts list:
